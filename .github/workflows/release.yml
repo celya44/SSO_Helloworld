@@ -1,0 +1,49 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: false
+          body: |
+            # SSO Helloworld ${{ steps.version.outputs.tag }}
+            
+            This release includes builds for:
+            - 🪟 Windows (NSIS Installer + Portable)
+            - 🍎 macOS (DMG + ZIP)
+            - 🐧 Linux (AppImage + DEB + RPM)
+            
+            ## Installation Instructions
+            
+            ### Windows
+            Download and run the `.exe` installer or use the portable version.
+            
+            ### macOS
+            Download the `.dmg` file and drag the app to Applications.
+            
+            ### Linux
+            - **AppImage**: Download and make executable: `chmod +x SSO\ Helloworld-*.AppImage`
+            - **Debian**: `sudo dpkg -i sso-helloworld-*.deb`
+            - **RPM**: `sudo rpm -i sso-helloworld-*.rpm`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
