@@ -1,9 +1,10 @@
 # SSO Helloworld - Electron Application
 
-Une application Electron cross-platform construite avec React et TypeScript. Supporte la création d'installers pour Windows, macOS et Linux.
+Une application Electron cross-platform construite avec React et TypeScript. Supporte l'authentification SSO via **SAML v2** et **OIDC**. Vous pouvez créer des installers pour Windows, macOS et Linux.
 
 ## 🚀 Fonctionnalités
 
+- ✅ Authentification SSO (SAML v2 et OIDC)
 - ✅ Développement avec React et TypeScript
 - ✅ Support multi-plateforme (Windows, macOS, Linux)
 - ✅ Electron-builder pour les installers natifs
@@ -20,6 +21,20 @@ Une application Electron cross-platform construite avec React et TypeScript. Sup
 ```bash
 npm install
 ```
+
+## 🔐 Configuration SSO
+
+Avant de lancer l'application, configurez vos paramètres SSO:
+
+```bash
+# Copier le fichier de configuration
+cp config.ini.example config.ini
+
+# Éditer et remplir vos paramètres SAML v2 ou OIDC
+nano config.ini
+```
+
+Consultez [SSO_GUIDE.md](SSO_GUIDE.md) pour les détails de configuration (Okta, Google, Azure AD, etc.).
 
 ## 🏃 Démarrage en développement
 

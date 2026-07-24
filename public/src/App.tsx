@@ -1,21 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Login from './Login';
+import HelloWorld from './HelloWorld';
 import './App.css';
 
+interface User {
+  name?: string;
+  email?: string;
+  method?: 'saml' | 'oidc';
+}
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  const handleLoginSuccess = (userData: User) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>SSO Helloworld</h1>
-        <p>Welcome to your Electron application!</p>
-        <p>Built with React and TypeScript</p>
-        <div className="info-box">
-          <h2>Platform Information</h2>
-          <p>This application supports Windows, macOS, and Linux.</p>
-          <p>Use the build commands to create installers for each platform.</p>
-        </div>
-      </header>
+      {isAuthenticated && user ? (
+        <HelloWorld user={user} onLogout={handleLogout} />
+      ) : (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      )}
     </div>
   );
 }
 
 export default App;
+

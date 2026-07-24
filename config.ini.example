@@ -1,0 +1,24 @@
+# Configuration SSO - SAML v2 et OIDC
+# Copier ce fichier en config.ini et remplir vos paramètres
+
+[SAML]
+# Fichier contenant le certificat de l'IdP
+certificateFilePath=/path/to/idp-certificate.pem
+# URL du service d'authentification unique
+entryPoint=https://your-idp.com/simplesaml/module.php/saml/sp/saml2-acs.php/default
+# Identifiant unique de votre application
+issuer=urn:your-app
+# URL de retour après authentification
+callbackUrl=http://localhost:3000/auth/saml/callback
+
+[OIDC]
+# URL du provider OIDC
+issuer=https://your-oidc-provider.com
+# Identifiant client fourni par le provider
+client_id=your_client_id
+# Secret client fourni par le provider
+client_secret=your_client_secret
+# URL de redirection après authentification
+redirect_uri=http://localhost:3000/auth/oidc/callback
+# Scope des permissions demandées
+scopes=openid,profile,email

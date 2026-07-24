@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu } from 'electron';
 import * as path from 'path';
+import { initAuth } from './auth';
 
 const isDev = require('electron-is-dev');
 
@@ -32,7 +33,10 @@ const createWindow = () => {
   });
 };
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+  initAuth();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

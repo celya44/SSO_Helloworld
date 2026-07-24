@@ -168,8 +168,46 @@ Vous devrez:
 3. Les ajouter aux secrets GitHub
 4. Les utiliser dans les workflows (voir section "Configuration")
 
+## � Authentification SSH (Pas de password!)
+
+Pour pousser vos modifications sans être demandé votre password à chaque fois:
+
+### Configuration Rapide
+
+**Linux/macOS:**
+```bash
+chmod +x setup-ssh.sh && ./setup-ssh.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\setup-ssh.ps1
+```
+
+### Configuration Manuelle
+
+Consultez [SSH_SETUP.md](SSH_SETUP.md) pour le guide complet.
+
+**Avantages:**
+- ✅ Pas de password demandé
+- ✅ Pas de token à gérer
+- ✅ Plus sécurisé (clé cryptée)
+- ✅ Fonctionne partout (CLI, IDE, GitHub Desktop, etc.)
+
+### Après Configuration
+
+```bash
+# Pousser vos modifications sans password!
+git push origin main
+
+# Créer une release sans password!
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## 📚 Ressources
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [SSH Setup Guide](SSH_SETUP.md)
 - [Electron Builder & CI/CD](https://www.electron.build/multi-platform-build)
 - [Actions Market Place](https://github.com/marketplace?type=actions)

@@ -20,10 +20,33 @@ git commit -m "Initial commit"
 3. Créez le repo
 4. Suivez les instructions pour pousser votre code local
 
+**Option A: Avec SSH (Recommandé - pas de password)**
+
+```bash
+# Configuration rapide (Linux/macOS)
+chmod +x setup-ssh.sh && ./setup-ssh.sh
+
+# Ou (Windows PowerShell)
+.\setup-ssh.ps1
+```
+
+**Option B: Manuelle avec SSH**
+
+```bash
+git remote add origin git@github.com:YOUR_USERNAME/SSO_Helloworld.git
+git branch -M main
+git push -u origin main
+```
+
+Consultez [SSH_SETUP.md](SSH_SETUP.md) pour plus de détails.
+
+**Option C: Avec HTTPS (Demande token)**
+
 ```bash
 git remote add origin https://github.com/YOUR_USERNAME/SSO_Helloworld.git
 git branch -M main
 git push -u origin main
+# Entrez votre token GitHub quand demandé
 ```
 
 ### 3. Premier Build
