@@ -1,0 +1,3 @@
+# Dossier pour les ressources d'application
+# Placez vos icônes ici pour les installers (png, ico, icns, etc.)
+# Par défaut, electron-builder cherche les icônes dans ce dossier
