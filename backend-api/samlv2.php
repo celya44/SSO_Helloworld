@@ -184,15 +184,13 @@ function validateSAMLAssertion($assertionXml, $config) {
 }
 
 /**
- * Vérifier la signature XML SAML
+ * Vérifier la signature XML SAML avec OpenSSL manuel
  */
 function verifySAMLSignature($responseXml, $cert) {
     try {
-        logDebug('TRACE-200: verifySAMLSignature() CALLED - XMLSecurityDSig on Assertion ONLY');
+        logDebug('TRACE-200: verifySAMLSignature() CALLED - Manual OpenSSL verification');
         
-        require_once __DIR__ . '/vendor/robrichards/xmlseclibs/xmlseclibs.php';
-        
-        // Parse the Response XML to extract the Assertion
+        // Parse the Response XML
         logDebug('TRACE-201: Parsing Response XML');
         $dom = new DOMDocument();
         $dom->preserveWhiteSpace = true;
@@ -211,55 +209,120 @@ function verifySAMLSignature($responseXml, $cert) {
         logDebug('TRACE-203: Assertion found');
         $assertion = $assertions->item(0);
         
-        // Create a new DOM with just the Assertion
-        logDebug('TRACE-204: Creating DOM with Assertion only');
-        $assertionDom = new DOMDocument();
-        $assertionDom->preserveWhiteSpace = true;
-        $assertionDom->loadXML($dom->saveXML($assertion));
+        // Extract Assertion XML (without extra formatting)
+        $assertionXml = $dom->saveXML($assertion);
+        logDebug('TRACE-204: Assertion XML extracted', ['size' => strlen($assertionXml)]);
         
-        logDebug('TRACE-205: Loading certificate');
-        $certificateContent = $cert;
+        // Find Signature element
+        $signatureList = $assertion->getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+        if ($signatureList->length === 0) {
+            throw new Exception('No Signature found in Assertion');
+        }
+        $signature = $signatureList->item(0);
+        logDebug('TRACE-205: Signature element found');
         
-        // Create XMLSecurityDSig instance
-        logDebug('TRACE-206: Creating XMLSecurityDSig instance');
-        $objDSig = new \RobRichards\XMLSecLibs\XMLSecurityDSig();
+        // Extract DigestValue (what the Assertion SHOULD hash to)
+        logDebug('TRACE-206: Extracting DigestValue');
+        $digestValueList = $signature->getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'DigestValue');
+        if ($digestValueList->length === 0) {
+            throw new Exception('No DigestValue in signature');
+        }
+        $expectedDigest = base64_decode($digestValueList->item(0)->textContent);
+        logDebug('TRACE-207: DigestValue extracted', ['size' => strlen($expectedDigest)]);
         
-        // Register ID attribute
-        logDebug('TRACE-207: Registering ID attribute');
-        $objDSig->idKeys = array('ID');
-        $objDSig->idNS = array(
-            'saml' => 'urn:oasis:names:tc:SAML:2.0:assertion'
-        );
+        // Extract SignatureValue (the actual signature)
+        logDebug('TRACE-208: Extracting SignatureValue');
+        $sigValueList = $signature->getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'SignatureValue');
+        if ($sigValueList->length === 0) {
+            throw new Exception('No SignatureValue in signature');
+        }
+        $signatureValue = base64_decode($sigValueList->item(0)->textContent);
+        logDebug('TRACE-209: SignatureValue extracted', ['size' => strlen($signatureValue)]);
         
-        // Locate and validate signature
-        logDebug('TRACE-208: Locating signature in Assertion');
-        $objDSig->locateSignature($assertionDom);
+        // For digest validation, we need:
+        // 1. Clone the Assertion
+        // 2. Remove the Signature element (enveloped-signature transform)
+        // 3. Canonicalize with exc-c14n
+        // 4. Calculate SHA256 on the canonicalized content
+        logDebug('TRACE-210: Cloning Assertion for digest calculation');
+        $assertionForDigest = clone $assertion;
         
-        if (!$objDSig->validateReference()) {
-            throw new Exception('Reference validation failed');
+        // Remove Signature from the clone
+        $signaturesToRemove = $assertionForDigest->getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+        for ($i = $signaturesToRemove->length - 1; $i >= 0; $i--) {
+            $sig = $signaturesToRemove->item($i);
+            $sig->parentNode->removeChild($sig);
+        }
+        logDebug('TRACE-211: Signature removed from clone');
+        
+        // Canonicalize the Assertion (without Signature) using Exclusive C14N
+        // Create a temporary DOM just for this Assertion to canonicalize it
+        $tempDoc = new DOMDocument();
+        $tempDoc->preserveWhiteSpace = true;
+        $importedAssertion = $tempDoc->importNode($assertionForDigest, true);
+        $tempDoc->appendChild($importedAssertion);
+        
+        $canonicalAssertion = $tempDoc->C14N(false, true);
+        logDebug('TRACE-212: Assertion canonicalized with exc-c14n', ['size' => strlen($canonicalAssertion)]);
+        
+        // Calculate SHA256 digest of the canonicalized Assertion
+        logDebug('TRACE-213: Calculating SHA256 digest of canonicalized Assertion');
+        $calculatedDigest = hash('sha256', $canonicalAssertion, true);
+        logDebug('TRACE-214: Digest calculated', ['size' => strlen($calculatedDigest)]);
+        
+        // Verify digest matches
+        if ($calculatedDigest !== $expectedDigest) {
+            logDebug('TRACE-215: Digest mismatch! Expected: ' . bin2hex($expectedDigest) . ', Got: ' . bin2hex($calculatedDigest));
+            throw new Exception('Assertion digest does not match signature');
+        }
+        logDebug('TRACE-216: Digest verified successfully');
+        
+        // Now verify the signature with OpenSSL
+        // First, extract the SignedInfo element
+        logDebug('TRACE-217: Extracting SignedInfo');
+        $signedInfoList = $signature->getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'SignedInfo');
+        if ($signedInfoList->length === 0) {
+            throw new Exception('No SignedInfo in signature');
         }
         
-        logDebug('TRACE-209: Reference validated, verifying signature');
+        $signedInfo = $signedInfoList->item(0);
+        logDebug('TRACE-218: SignedInfo element found');
         
-        // Get the key from certificate
-        $objKey = new \RobRichards\XMLSecLibs\XMLSecurityKey(\RobRichards\XMLSecLibs\XMLSecurityKey::RSA_SHA256, array('type' => 'public'));
-        $objKey->loadKey($certificateContent, false, true);
+        // Canonicalize SignedInfo using exc-c14n
+        // Create a temporary DOM for SignedInfo canonicalization
+        $tempDoc2 = new DOMDocument();
+        $tempDoc2->preserveWhiteSpace = true;
+        $importedSignedInfo = $tempDoc2->importNode($signedInfo, true);
+        $tempDoc2->appendChild($importedSignedInfo);
         
-        // Verify the signature
-        logDebug('TRACE-210: Verifying signature with certificate');
-        $objDSig->verify($objKey);
+        $canonicalSignedInfo = $tempDoc2->C14N(false, true);
+        logDebug('TRACE-219: SignedInfo canonicalized with exc-c14n', ['size' => strlen($canonicalSignedInfo)]);
         
-        logDebug('TRACE-299: ✅ SAML Signature verification SUCCESSFUL!');
+        // Extract public key from certificate
+        logDebug('TRACE-220: Extracting public key from certificate');
+        $publicKey = openssl_get_publickey($cert);
+        if (!$publicKey) {
+            throw new Exception('Failed to extract public key from certificate');
+        }
+        logDebug('TRACE-221: Public key extracted');
+        
+        // Verify signature using OpenSSL
+        logDebug('TRACE-222: Verifying signature with openssl_verify');
+        $verifyResult = openssl_verify($canonicalSignedInfo, $signatureValue, $publicKey, OPENSSL_ALGO_SHA256);
+        logDebug('TRACE-223: Signature verification result', ['result' => $verifyResult]);
+        
+        openssl_free_key($publicKey);
+        
+        if ($verifyResult !== 1) {
+            logDebug('TRACE-299: ❌ Signature verification failed', ['result' => $verifyResult]);
+            throw new Exception('OpenSSL signature verification failed (result: ' . $verifyResult . ')');
+        }
+        
+        logDebug('TRACE-299: ✅ Signature verification successful');
         return true;
-        
     } catch (Exception $e) {
-        logDebug('TRACE-298: ❌ Signature verification failed');
-        logError('Signature verification error', [
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ]);
-        return false;
+        logError('Signature verification error', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+        throw $e;
     }
 }
 
