@@ -1,0 +1,52 @@
+# Configuration SSO - SAML v2 et OIDC
+# Copier ce fichier en sso.ini et remplir vos paramètres
+
+[SAML]
+# Option 1: URL des métadonnées de l'IdP (recommandé - PRIORITAIRE)
+# Récupérez cette URL auprès de votre fournisseur d'identité
+# Toutes les infos (certificat, entryPoint, etc.) seront extraites de cette URL
+metadataUrl=https://your-idp.com/metadata.xml
+
+# Option 2: URL pour télécharger le certificat de l'IdP (alternative)
+# Utilisée si metadataUrl n'est pas disponible
+# Exemple: pour Zitadel
+certificateUrl=https://your-idp.com/.well-known/jwks
+
+# Option 3: Chemin vers le fichier de certificat de l'IdP (alternative locale)
+# Téléchargez le certificat public de votre IdP
+certificateFilePath=/path/to/idp-certificate.pem
+
+# URL du service d'authentification unique
+entryPoint=https://your-idp.com/sso
+
+# Identifiant unique de votre application (celyavox)
+issuer=urn:celyavox:app
+
+# URL de retour après authentification
+# IMPORTANT: Le port 3001 est utilisé par le serveur Express SAML
+callbackUrl=http://localhost:3001/auth/saml/callback
+
+# URL du serveur PHP qui valide les assertions SAML
+# L'application Electron enverra l'assertion SAML à cette URL
+# Le serveur PHP revalidera l'assertion auprès de l'IdP
+validateUrl=http://localhost/api/samlv2.php
+
+[OIDC]
+# URL du provider OIDC
+issuer=https://your-oidc-provider.com
+# Identifiant client fourni par le provider
+client_id=your_client_id
+# Secret client fourni par le provider
+client_secret=your_client_secret
+# URL de redirection après authentification
+redirect_uri=http://localhost:3001/auth/oidc/callback
+# URL de redirection après déconnexion
+post_logout_redirect_uri=http://localhost:3001/auth/logout/callback
+# Scope des permissions demandées
+scopes=openid,profile,email
+
+# URL du serveur PHP qui valide les tokens OIDC
+# L'application Electron enverra le token OIDC à cette URL
+# Le serveur PHP revalidera le token auprès du provider OIDC
+validateUrl=http://localhost/api/oidc.php
+

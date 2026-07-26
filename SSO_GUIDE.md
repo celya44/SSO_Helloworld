@@ -1,20 +1,23 @@
-# Guide SSO - SAML v2 et OIDC
+# Guide de Configuration SSO - SAML v2 et OIDC
 
-Cette application supporte l'authentification SSO via **SAML v2** et **OIDC**.
+Cette application (celyavox) supporte l'authentification SSO via **SAML v2** et **OIDC**.
 
 ## 🚀 Configuration
 
-### 1. Créer le fichier `config.ini`
+### 1. Créer le fichier `sso.ini`
 
-Copiez `config.ini.example` en `config.ini`:
+Le fichier `sso.ini` doit être placé dans votre répertoire utilisateur: `~/.config/celyavox/sso.ini`
+
+Créez le répertoire et copiez le fichier d'exemple:
 
 ```bash
-cp config.ini.example config.ini
+mkdir -p ~/.config/celyavox
+cp sso.ini.example ~/.config/celyavox/sso.ini
 ```
 
 ### 2. Remplir les paramètres
 
-Éditez `config.ini` avec vos paramètres SSO:
+Éditez `~/.config/celyavox/sso.ini` avec vos paramètres SSO:
 
 ```ini
 [SAML]
@@ -46,16 +49,72 @@ L'application affichera deux boutons:
 
 SAML (Security Assertion Markup Language) est un standard d'authentification basé sur XML.
 
+### Métadonnées du SP (Service Provider)
+
+Quand vous configurez votre application dans l'IdP, vous aurez besoin de fournir les **métadonnées de votre application** (le Service Provider). Voici ce qu'il faut donner à votre IdP:
+
+| Paramètre | Valeur | Description |
+|-----------|--------|-------------|
+| **Entity ID** | `urn:celyavox:app` | Identifiant de votre application |
+| **ACS URL** | `http://localhost:3000/auth/saml/callback` | URL de réponse (Assertion Consumer Service) |
+| **Binding** | HTTP-POST | Méthode de transmission de la réponse SAML |
+
+**Pour développement en local:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" entityID="urn:your-app">
+  <SPSSODescriptor 
+    AuthnRequestsSigned="false"
+    WantAssertionsSigned="true"
+    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <AssertionConsumerService 
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+      Location="http://localhost:3000/auth/saml/callback"
+      index="0" isDefault="true"/>
+  </SPSSODescriptor>
+</EntityDescriptor>
+```
+
+**⚠️ Important pour la production:**
+Remplacez `http://localhost:3000/auth/saml/callback` par votre URL réelle (HTTPS):
+```
+https://your-domain.com/auth/saml/callback
+```
+
+### Obtenir les Métadonnées de l'IdP
+
+1. **Auprès de votre fournisseur d'identité**, demandez l'URL des métadonnées SAML
+   - Format: `https://your-idp.com/metadata.xml`
+   - Ou un fichier XML avec les métadonnées
+
+2. Vous pouvez aussi télécharger le certificat public directement (format `.pem` ou `.crt`)
+
 ### Paramètres SAML
 
 | Paramètre | Description |
 |-----------|-------------|
-| `certificateFilePath` | Chemin vers le certificat public du fournisseur d'identité |
+| `metadataUrl` | **URL des métadonnées** de l'IdP (recommandé) |
+| `certificateFilePath` | Chemin du certificat public de l'IdP (alternative) |
 | `entryPoint` | URL du service d'authentification unique (SSO) du fournisseur |
 | `issuer` | Identifiant unique de votre application (URN) |
 | `callbackUrl` | URL où l'utilisateur sera redirigé après l'authentification |
 
 ### Exemple avec Okta
+
+```ini
+[SAML]
+metadataUrl=https://your-org.okta.com/app/123/sso/saml/metadata
+entryPoint=https://your-org.okta.com/app/123/sso/saml
+issuer=urn:your-app
+callbackUrl=http://localhost:3000/auth/saml/callback
+```
+
+**Où trouver l'URL de métadonnées Okta:**
+1. Admin Console → Applications → Votre app SAML
+2. Sign On tab → View SAML Setup Instructions
+3. Identity Provider Metadata URL
+
+Ou si vous préférez le certificat:
 
 ```ini
 [SAML]
@@ -66,6 +125,73 @@ callbackUrl=http://localhost:3000/auth/saml/callback
 ```
 
 ### Exemple avec Azure AD
+
+```ini
+[SAML]
+metadataUrl=https://login.microsoftonline.com/your-tenant/federationmetadata/2007-06/federationmetadata.xml
+entryPoint=https://login.microsoftonline.com/your-tenant/saml2
+issuer=urn:your-app
+callbackUrl=http://localhost:3000/auth/saml/callback
+```
+
+**Où trouver l'URL de métadonnées Azure AD:**
+1. Azure Portal → Azure Active Directory → Enterprise applications
+2. Votre application → Single sign-on → SAML
+3. Endpoint → Federation Metadata Document
+
+---
+
+## 📋 Configurer l'Application dans votre IdP
+
+### Métadonnées de votre SP à fournir
+
+Quand vous créez une nouvelle application SAML dans votre IdP, il vous demandera:
+
+**1. Entity ID (Issuer du SP):**
+```
+urn:celyavox:app
+```
+
+**2. ACS URL (Assertion Consumer Service URL):**
+```
+http://localhost:3000/auth/saml/callback
+```
+
+**3. Nom de l'application:**
+```
+SSO Helloworld
+```
+
+### Exemple: Configuration dans Okta
+
+1. **Admin Console** → Applications → Create App Integration
+2. Choisir: **SAML 2.0**
+3. Remplir **General Settings:**
+   - App name: `celyavox`
+4. Remplir **SAML Settings:**
+   - Single sign on URL: `http://localhost:3000/auth/saml/callback`
+   - Audience Restriction: `urn:celyavox:app`
+5. **Next** → Finish
+6. Aller à **Sign On** tab
+7. Copier: **Identity Provider metadata URL** → Insérer dans `sso.ini` sous `metadataUrl`
+
+### Exemple: Configuration dans Azure AD
+
+1. **Azure Portal** → Azure AD → Enterprise applications → New application
+2. Rechercher: **SAML**
+3. Choisir: **Create your own application**
+4. Name: `celyavox`
+5. Aller à **Single sign-on** → SAML
+6. Dans **Basic SAML Configuration:**
+   - Identifier (Entity ID): `urn:celyavox:app`
+   - Reply URL (Assertion Consumer Service URL): `http://localhost:3000/auth/saml/callback`
+7. Télécharger: **Federation Metadata XML** → Insérer path dans `sso.ini` sous `certificateFilePath`
+
+### Fichier SP Metadata
+
+Un fichier `sp-metadata.xml` est inclus. Vous pouvez le fournir directement à votre IdP si demandé.
+
+Ou si vous préférez le certificat:
 
 ```ini
 [SAML]
@@ -125,12 +251,12 @@ scopes=openid,profile,email
 ## 📁 Structure des Fichiers
 
 ```
-├── config.ini              # Configuration SSO (ne pas commiter!)
-├── config.ini.example      # Exemple de configuration
+├── sso.ini              # Configuration SSO (ne pas commiter!)
+├── sso.ini.example      # Exemple de configuration
 ├── src/
 │   ├── main.ts            # Processus principal Electron
 │   ├── preload.ts         # Script de preload
-│   ├── config.ts          # Lecture de config.ini
+│   ├── config.ts          # Lecture de sso.ini
 │   └── auth.ts            # Logique d'authentification (IPC handlers)
 ├── public/src/
 │   ├── App.tsx            # Composant principal
@@ -139,19 +265,19 @@ scopes=openid,profile,email
 │   ├── Login.css
 │   ├── HelloWorld.css
 │   └── electron.d.ts       # Types TypeScript
-└── .gitignore             # config.ini est ignoré
+└── .gitignore             # sso.ini est ignoré
 ```
 
 ## 🔒 Sécurité
 
-- ✅ `config.ini` est ignoré par Git (ne pas commiter vos secrets!)
+- ✅ `sso.ini` est ignoré par Git (ne pas commiter vos secrets!)
 - ✅ Les certificats `.pem` sont ignorés par Git
 - ✅ Les secrets clients sont stockés localement
 - ✅ Communication sécurisée entre Electron et React via IPC
 
 ### Bonnes Pratiques
 
-1. **Ne jamais commiter `config.ini`** - Il contient vos secrets
+1. **Ne jamais commiter `sso.ini`** - Il contient vos secrets
 2. **Utiliser des variables d'environnement en production**:
    ```bash
    export SAML_CERT_PATH=/secure/path/cert.pem
@@ -207,7 +333,7 @@ R: Votre fournisseur d'identité le fournit. Pour Okta: Settings → Application
 R: Créez une application dans votre fournisseur. Les paramètres seront fournis dans le "Client Details" ou "Application Settings"
 
 **Q: La connexion échoue "not configured"**
-R: Vérifiez que `config.ini` existe et contient les bonnes sections [SAML] ou [OIDC]
+R: Vérifiez que `sso.ini` existe et contient les bonnes sections [SAML] ou [OIDC]
 
 **Q: Comment tester sans fournisseur réel?**
 R: L'app simule actuellement une authentification. Remplacez le code dans `src/auth.ts` par votre logique réelle.
@@ -222,7 +348,7 @@ Avant de deployer:
 2. Gérer les secrets de manière sécurisée (variables d'env, gestionnaire de secrets)
 3. Tester avec un vrai fournisseur d'identité
 4. Mettre à jour les URLs de callback pour votre domaine
-5. Créer `config.ini` sur le serveur de production
+5. Créer `sso.ini` sur le serveur de production
 
 ## 🛠️ Dépannage
 
@@ -230,12 +356,12 @@ Avant de deployer:
 
 Vérifiez que:
 1. `npm install` a été exécuté
-2. `config.ini` existe et est valide
+2. `sso.ini` existe et est valide
 3. Les logs Electron affichent: "Config loaded successfully"
 
 ### Erreur "SAML not configured"
 
-`config.ini` n'existe pas ou ne contient pas la section `[SAML]`.
+`sso.ini` n'existe pas ou ne contient pas la section `[SAML]`.
 
 ### Erreur "Certificate not found"
 
@@ -244,4 +370,4 @@ Vérifiez le chemin du certificat:
 ls -la /path/to/certificate.pem
 ```
 
-Utilisez des chemins absolus dans `config.ini`.
+Utilisez des chemins absolus dans `sso.ini`.

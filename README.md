@@ -27,11 +27,14 @@ npm install
 Avant de lancer l'application, configurez vos paramètres SSO:
 
 ```bash
+# Créer le répertoire de configuration
+mkdir -p ~/.config/celyavox
+
 # Copier le fichier de configuration
-cp config.ini.example config.ini
+cp sso.ini.example ~/.config/celyavox/sso.ini
 
 # Éditer et remplir vos paramètres SAML v2 ou OIDC
-nano config.ini
+nano ~/.config/celyavox/sso.ini
 ```
 
 Consultez [SSO_GUIDE.md](SSO_GUIDE.md) pour les détails de configuration (Okta, Google, Azure AD, etc.).

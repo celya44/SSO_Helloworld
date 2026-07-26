@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Service Provider (SP) Metadata pour celyavox
+  
+  À fournir à votre IdP lors de la configuration de l'application.
+  
+  Pour production:
+  - Remplacez "http://localhost:3000/auth/saml/callback" par votre URL réelle (HTTPS)
+-->
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" entityID="urn:celyavox:app">
+  <SPSSODescriptor 
+    AuthnRequestsSigned="false"
+    WantAssertionsSigned="true"
+    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    
+    <!-- Assertion Consumer Service -->
+    <!-- L'IdP envoie la réponse SAML à cette URL -->
+    <AssertionConsumerService 
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+      Location="http://localhost:3001/auth/saml/callback"
+      index="0" 
+      isDefault="true"/>
+      
+  </SPSSODescriptor>
+</EntityDescriptor>
