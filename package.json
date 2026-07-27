@@ -63,6 +63,7 @@
   "build": {
     "appId": "com.sso-helloworld.app",
     "productName": "SSO Helloworld",
+    "extends": null,
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
