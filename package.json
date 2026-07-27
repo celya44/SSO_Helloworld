@@ -65,9 +65,9 @@
     "productName": "SSO Helloworld",
     "files": [
       "dist/**/*",
+      "dist-electron/**/*",
       "node_modules/**/*",
       "public/**/*",
-      "build/**/*",
       "package.json"
     ],
     "directories": {

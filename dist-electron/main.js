@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const auth_1 = require("./auth");
+const logger_1 = require("./logger");
 const isDev = require('electron-is-dev');
 let mainWindow;
 const createWindow = () => {
@@ -50,10 +51,14 @@ const createWindow = () => {
     });
 };
 electron_1.app.on('ready', () => {
+    // Initialize logger first
+    (0, logger_1.initLogger)();
     createWindow();
     if (mainWindow) {
         (0, auth_1.initAuth)(mainWindow);
     }
+    // Setup IPC handlers for logging
+    setupLoggerHandlers();
 });
 electron_1.app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -95,4 +100,31 @@ const template = [
 ];
 const menu = electron_1.Menu.buildFromTemplate(template);
 electron_1.Menu.setApplicationMenu(menu);
+/**
+ * Setup IPC handlers for logger
+ */
+function setupLoggerHandlers() {
+    // Get current log content
+    electron_1.ipcMain.handle('logger:get-logs', async () => {
+        return (0, logger_1.getLogContent)();
+    });
+    // Get log file path
+    electron_1.ipcMain.handle('logger:get-log-path', async () => {
+        return (0, logger_1.getLogFilePath)();
+    });
+    // Clear logs
+    electron_1.ipcMain.handle('logger:clear-logs', async () => {
+        try {
+            (0, logger_1.clearLogs)();
+            return { success: true };
+        }
+        catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+}
+// Handle app quit
+electron_1.app.on('before-quit', () => {
+    (0, logger_1.closeLogger)();
+});
 //# sourceMappingURL=main.js.map

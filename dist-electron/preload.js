@@ -12,5 +12,15 @@ electron_1.contextBridge.exposeInMainWorld('electron', {
     invoke: (channel, data) => {
         return electron_1.ipcRenderer.invoke(channel, data);
     },
+    // Logger functions
+    getLogs: () => {
+        return electron_1.ipcRenderer.invoke('logger:get-logs');
+    },
+    getLogPath: () => {
+        return electron_1.ipcRenderer.invoke('logger:get-log-path');
+    },
+    clearLogs: () => {
+        return electron_1.ipcRenderer.invoke('logger:clear-logs');
+    },
 });
 //# sourceMappingURL=preload.js.map
