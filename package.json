@@ -96,9 +96,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "compressionLevel": 6,
-      "artifactBuildStarted": "true"
+      "createStartMenuShortcut": true
     },
     "mac": {
       "target": [
