@@ -31,16 +31,16 @@ jobs:
         with:
           name: windows-build
           path: |
-            out/*.exe
-            out/*.yml
+            dist/*.exe
+            dist/*.yml
       
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            out/*.exe
-            out/*.yml
+            dist/*.exe
+            dist/*.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -68,18 +68,18 @@ jobs:
         with:
           name: macos-build
           path: |
-            out/*.dmg
-            out/*.zip
-            out/*.yml
+            dist/*.dmg
+            dist/*.zip
+            dist/*.yml
       
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            out/*.dmg
-            out/*.zip
-            out/*.yml
+            dist/*.dmg
+            dist/*.zip
+            dist/*.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -110,20 +110,20 @@ jobs:
         with:
           name: linux-build
           path: |
-            out/*.AppImage
-            out/*.deb
-            out/*.rpm
-            out/*.yml
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.yml
       
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            out/*.AppImage
-            out/*.deb
-            out/*.rpm
-            out/*.yml
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
