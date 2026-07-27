@@ -10,12 +10,12 @@ return [
         // L'URL des métadonnées de l'IdP (PRIORITAIRE si renseignée)
         // Toutes les infos (certificat, entryPoint, etc.) seront extraites de cette URL
         // Configurez ceci dans sso.ini ou dans le code ci-dessous
-        'metadataUrl' => 'https://www.samltest.dev/apps/app_01ky9mhqkr3gcghjzg0jeeptc7/metadata',
+        //'metadataUrl' => 'https://www.samltest.dev/apps/app_01ky9mhqkr3gcghjzg0jeeptc7/metadata',
         
         // URL pour télécharger le certificat public de l'IdP
         // Utilisée en alternative si metadataUrl n'est pas disponible
         // Priorité: metadataUrl > certificateUrl
-       // 'certificateUrl' =>  'https://oidc-vlejo7.eu1.zitadel.cloud/saml/v2/certificate',
+        'certificateUrl' =>  'https://oidc-vlejo7.eu1.zitadel.cloud/saml/v2/certificate',
         
         // Chemin local du certificat IdP (alternative)
         //'certificateFilePath' => null,

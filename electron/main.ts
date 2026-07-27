@@ -1,6 +1,7 @@
-import { app, BrowserWindow, Menu } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain } from 'electron';
 import * as path from 'path';
 import { initAuth } from './auth';
+import { initLogger, getLogContent, clearLogs, closeLogger, getLogFilePath } from './logger';
 
 const isDev = require('electron-is-dev');
 
@@ -33,11 +34,17 @@ const createWindow = () => {
 };
 
 app.on('ready', () => {
+  // Initialize logger first
+  initLogger();
+  
   createWindow();
   
   if (mainWindow) {
     initAuth(mainWindow);
   }
+  
+  // Setup IPC handlers for logging
+  setupLoggerHandlers();
 });
 
 app.on('window-all-closed', () => {
@@ -83,3 +90,33 @@ const template: any[] = [
 
 const menu = Menu.buildFromTemplate(template);
 Menu.setApplicationMenu(menu);
+
+/**
+ * Setup IPC handlers for logger
+ */
+function setupLoggerHandlers() {
+  // Get current log content
+  ipcMain.handle('logger:get-logs', async () => {
+    return getLogContent();
+  });
+
+  // Get log file path
+  ipcMain.handle('logger:get-log-path', async () => {
+    return getLogFilePath();
+  });
+
+  // Clear logs
+  ipcMain.handle('logger:clear-logs', async () => {
+    try {
+      clearLogs();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+}
+
+// Handle app quit
+app.on('before-quit', () => {
+  closeLogger();
+});

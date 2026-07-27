@@ -8,6 +8,9 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<string>('');
+  const [logsLoading, setLogsLoading] = useState(false);
 
   const handleSAMLLogin = async () => {
     setLoading('saml');
@@ -45,6 +48,54 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const handleViewLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const logsContent = await (window as any).electron.getLogs();
+      setLogs(logsContent);
+      setShowLogs(true);
+    } catch (err: any) {
+      setError('Failed to load logs: ' + err.message);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  const handleDownloadLogs = async () => {
+    try {
+      const logsContent = await (window as any).electron.getLogs();
+      
+      // Create a blob and download it
+      const element = document.createElement('a');
+      const file = new Blob([logsContent], { type: 'text/plain' });
+      element.href = URL.createObjectURL(file);
+      element.download = `app-logs-${new Date().toISOString().split('T')[0]}.log`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    } catch (err: any) {
+      setError('Failed to download logs: ' + err.message);
+    }
+  };
+
+  const handleClearLogs = async () => {
+    if (window.confirm('Are you sure you want to clear all logs?')) {
+      try {
+        const result = await (window as any).electron.clearLogs();
+        if (result.success) {
+          setLogs('');
+          setShowLogs(false);
+          setError('Logs cleared successfully');
+          setTimeout(() => setError(null), 3000);
+        } else {
+          setError('Failed to clear logs: ' + result.error);
+        }
+      } catch (err: any) {
+        setError('Failed to clear logs: ' + err.message);
+      }
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-card">
@@ -78,7 +129,69 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <p className="info-text">
           Utilisez SAML v2 ou OIDC pour vous connecter
         </p>
+
+        {/* Log actions */}
+        <div className="log-actions">
+          <button
+            className="log-btn view-btn"
+            onClick={handleViewLogs}
+            disabled={logsLoading}
+            title="View application logs"
+          >
+            {logsLoading ? '⏳ Loading...' : '📋 View Logs'}
+          </button>
+          <button
+            className="log-btn download-btn"
+            onClick={handleDownloadLogs}
+            title="Download logs as file"
+          >
+            ⬇️ Download Logs
+          </button>
+        </div>
       </div>
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="logs-modal" onClick={() => setShowLogs(false)}>
+          <div className="logs-content" onClick={(e) => e.stopPropagation()}>
+            <div className="logs-header">
+              <h2>Application Logs</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setShowLogs(false)}
+                title="Close logs"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="logs-body">
+              <pre>{logs || 'No logs available'}</pre>
+            </div>
+            
+            <div className="logs-footer">
+              <button
+                className="log-btn clear-btn"
+                onClick={handleClearLogs}
+              >
+                🗑️ Clear Logs
+              </button>
+              <button
+                className="log-btn"
+                onClick={handleDownloadLogs}
+              >
+                ⬇️ Download
+              </button>
+              <button
+                className="log-btn close-modal-btn"
+                onClick={() => setShowLogs(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

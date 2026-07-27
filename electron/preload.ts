@@ -11,4 +11,14 @@ contextBridge.exposeInMainWorld('electron', {
   invoke: (channel: string, data?: any) => {
     return ipcRenderer.invoke(channel, data);
   },
+  // Logger functions
+  getLogs: () => {
+    return ipcRenderer.invoke('logger:get-logs');
+  },
+  getLogPath: () => {
+    return ipcRenderer.invoke('logger:get-log-path');
+  },
+  clearLogs: () => {
+    return ipcRenderer.invoke('logger:clear-logs');
+  },
 });
