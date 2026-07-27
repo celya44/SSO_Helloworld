@@ -66,8 +66,8 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "build/**/*",
       "node_modules/**/*",
-      "public/**/*",
       "package.json"
     ],
     "directories": {
