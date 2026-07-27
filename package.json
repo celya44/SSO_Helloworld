@@ -4,7 +4,7 @@
   "description": "SSO Helloworld Electron Application",
   "main": "dist-electron/main.js",
   "homepage": "./",
-  "author": "",
+  "author": "SSO Team <dev@sso-helloworld.com>",
   "license": "MIT",
   "scripts": {
     "dev": "npm run build:electron && concurrently npm:dev:*",
@@ -96,7 +96,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "compressionLevel": 6,
+      "artifactBuildStarted": "true"
     },
     "mac": {
       "target": [
