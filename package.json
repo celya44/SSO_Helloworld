@@ -64,6 +64,7 @@
     "appId": "com.sso-helloworld.app",
     "productName": "SSO Helloworld",
     "extends": null,
+    "publish": null,
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
