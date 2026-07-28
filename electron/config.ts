@@ -27,15 +27,99 @@ export interface AppConfig {
   oidc?: OIDCConfig;
 }
 
+/**
+ * Get config directory based on OS conventions
+ * Linux: ~/.config/celyavox
+ * macOS: ~/Library/Application Support/celyavox
+ * Windows: %APPDATA%\celyavox
+ */
+function getConfigDirectory(): string {
+  const homeDir = os.homedir();
+  const platform = process.platform;
+  
+  let configDir: string;
+  
+  switch (platform) {
+    case 'darwin':
+      // macOS
+      configDir = path.join(homeDir, 'Library', 'Application Support', 'celyavox');
+      break;
+    case 'win32':
+      // Windows
+      const appData = process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming');
+      configDir = path.join(appData, 'celyavox');
+      break;
+    default:
+      // Linux and other Unix-like systems
+      configDir = path.join(homeDir, '.config', 'celyavox');
+  }
+  
+  return configDir;
+}
+
+/**
+ * Ensure config directory exists and copy example file if needed
+ */
+function ensureConfigDirectory(): string {
+  const configDir = getConfigDirectory();
+  
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+    console.log(`Created config directory: ${configDir}`);
+  }
+  
+  return configDir;
+}
+
+/**
+ * Copy sso.ini.example to ~/.config/celyavox/sso.ini if it doesn't exist
+ */
+function initializeConfigFile(configDir: string, configPath: string): void {
+  if (fs.existsSync(configPath)) {
+    return; // Config already exists
+  }
+  
+  // Try to find sso.ini.example in multiple locations
+  const possiblePaths = [
+    path.join(__dirname, '../../sso.ini.example'),
+    path.join(__dirname, '../sso.ini.example'),
+    path.join(__dirname, '../../../sso.ini.example'),
+    path.join(process.resourcesPath, 'sso.ini.example'),
+  ];
+  
+  let exampleFound = false;
+  for (const examplePath of possiblePaths) {
+    if (fs.existsSync(examplePath)) {
+      try {
+        fs.copyFileSync(examplePath, configPath);
+        console.log(`Initialized config file from: ${examplePath}`);
+        console.log(`Config copied to: ${configPath}`);
+        exampleFound = true;
+        break;
+      } catch (error) {
+        console.warn(`Failed to copy from ${examplePath}: ${error}`);
+      }
+    }
+  }
+  
+  if (!exampleFound) {
+    console.warn(`sso.ini.example not found in expected locations`);
+    console.warn(`Please manually copy sso.ini.example to: ${configPath}`);
+  }
+}
+
 export function loadConfig(): AppConfig {
   // Chercher sso.ini dans ~/.config/celyavox/sso.ini
-  const configDir = path.join(os.homedir(), '.config', 'celyavox');
+  const configDir = ensureConfigDirectory();
   const configPath = path.join(configDir, 'sso.ini');
+
+  // Initialize config file if needed
+  initializeConfigFile(configDir, configPath);
 
   if (!fs.existsSync(configPath)) {
     console.warn(`sso.ini not found at ${configPath}`);
     console.warn(`Please copy sso.ini.example to ${configPath}`);
-    console.warn(`Commands: mkdir -p ${configDir} && cp sso.ini.example ${configPath}`);
     return {};
   }
 
