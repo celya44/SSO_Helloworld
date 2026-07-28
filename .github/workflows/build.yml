@@ -43,6 +43,12 @@ jobs:
       - name: Package for Windows
         run: npm run dist
       
+      - name: Remove builder debug files
+        shell: powershell
+        run: |
+          Remove-Item -Path "dist/builder-debug.yml" -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "dist/*.blockmap" -Force -ErrorAction SilentlyContinue
+      
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -91,6 +97,11 @@ jobs:
         run: npm run dist
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      
+      - name: Remove builder debug files
+        run: |
+          rm -f dist/builder-debug.yml
+          rm -f dist/*.blockmap
       
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -145,6 +156,11 @@ jobs:
       
       - name: Package for Linux
         run: npm run dist
+      
+      - name: Remove builder debug files
+        run: |
+          rm -f dist/builder-debug.yml
+          rm -f dist/*.blockmap
       
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
