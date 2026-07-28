@@ -73,7 +73,14 @@
       "package.json",
       "sso.ini.example",
       "!**/*.map",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,LICENSE,LICENSE.txt,license.txt,History.md,history.md,.github,*.c,*.cc,*.h,*.gyp,*.gypi,*.eslintignore}"
+      "!**/*.d.ts",
+      "!**/*.ts",
+      "!**/node_modules/**/{README*,CHANGELOG*,*.md,*.txt,*.gyp,*.gypi,.github,test,tests,*.c,*.cc,*.h,example,examples,sample,samples}",
+      "!**/node_modules/**/package-lock.json",
+      "!**/node_modules/**/.cache",
+      "!**/node_modules/**/.bin",
+      "!build/**/*.map",
+      "!build/node_modules"
     ],
     "asarUnpack": [
       "node_modules/**/*.node",
