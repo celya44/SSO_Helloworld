@@ -27,16 +27,18 @@ jobs:
         run: npm run build:react
       
       - name: Remove source maps
-        run: del /s /q build\*.map & rmdir /s /q build\node_modules 2>nul || exit /b 0
+        shell: powershell
+        run: |
+          Get-ChildItem -Path build -Filter "*.map" -Recurse | Remove-Item -Force
+          if (Test-Path "build/node_modules") { Remove-Item -Recurse -Force "build/node_modules" }
       
       - name: Build Electron
         run: npm run build:electron
       
-      - name: Prune dev dependencies for package
-        run: npm prune --omit=dev
-      
       - name: Clean node_modules cache
-        run: rmdir /s /q node_modules\.cache 2>nul || exit /b 0
+        shell: powershell
+        run: |
+          if (Test-Path "node_modules/.cache") { Remove-Item -Recurse -Force "node_modules/.cache" }
       
       - name: Package for Windows
         run: npm run dist
@@ -81,9 +83,6 @@ jobs:
       
       - name: Build Electron
         run: npm run build:electron
-      
-      - name: Prune dev dependencies for package
-        run: npm prune --omit=dev
       
       - name: Clean node_modules cache
         run: rm -rf node_modules/.cache
@@ -140,9 +139,6 @@ jobs:
       
       - name: Build Electron
         run: npm run build:electron
-      
-      - name: Prune dev dependencies for package
-        run: npm prune --omit=dev
       
       - name: Clean node_modules cache
         run: rm -rf node_modules/.cache
