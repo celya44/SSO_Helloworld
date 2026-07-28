@@ -31,10 +31,9 @@ export interface AppConfig {
  * Get config directory based on OS conventions
  * Linux: ~/.config/celyavox
  * macOS: ~/Library/Application Support/celyavox
- * Windows: %APPDATA%\celyavox
+ * Windows: C:\Program Files\celyavox
  */
 function getConfigDirectory(): string {
-  const homeDir = os.homedir();
   const platform = process.platform;
   
   let configDir: string;
@@ -42,16 +41,16 @@ function getConfigDirectory(): string {
   switch (platform) {
     case 'darwin':
       // macOS
-      configDir = path.join(homeDir, 'Library', 'Application Support', 'celyavox');
+      configDir = path.join(os.homedir(), 'Library', 'Application Support', 'celyavox');
       break;
     case 'win32':
-      // Windows
-      const appData = process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming');
-      configDir = path.join(appData, 'celyavox');
+      // Windows - Use Program Files
+      const programFiles = process.env.ProgramFiles || 'C:\\Program Files';
+      configDir = path.join(programFiles, 'celyavox');
       break;
     default:
       // Linux and other Unix-like systems
-      configDir = path.join(homeDir, '.config', 'celyavox');
+      configDir = path.join(os.homedir(), '.config', 'celyavox');
   }
   
   return configDir;
@@ -65,8 +64,29 @@ function ensureConfigDirectory(): string {
   
   // Create directory if it doesn't exist
   if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-    console.log(`Created config directory: ${configDir}`);
+    try {
+      fs.mkdirSync(configDir, { recursive: true });
+      console.log(`Created config directory: ${configDir}`);
+    } catch (error) {
+      console.error(`Failed to create config directory: ${configDir}`);
+      console.error(`Error: ${error}`);
+      
+      // On Windows, if Program Files is not writable, fallback to APPDATA
+      if (process.platform === 'win32') {
+        const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+        const fallbackDir = path.join(appData, 'celyavox');
+        console.warn(`Falling back to: ${fallbackDir}`);
+        
+        try {
+          fs.mkdirSync(fallbackDir, { recursive: true });
+          return fallbackDir;
+        } catch (fallbackError) {
+          console.error(`Fallback directory also failed: ${fallbackError}`);
+          throw new Error(`Unable to create config directory at ${configDir} or ${fallbackDir}`);
+        }
+      }
+      throw error;
+    }
   }
   
   return configDir;
